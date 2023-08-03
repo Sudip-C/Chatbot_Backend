@@ -2,7 +2,7 @@ const { Configuration, OpenAIApi } = require("openai");
 const readlineSync = require("readline-sync");
 require("dotenv").config();
 
-(async () => {
+const chat = async () => {
   const configuration = new Configuration({
     apiKey: process.env.OPENAI_API_KEY,
   });
@@ -50,4 +50,5 @@ require("dotenv").config();
       }
     }
   }
-})();
+}
+chat();
