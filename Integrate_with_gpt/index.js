@@ -1,63 +1,37 @@
 const express = require("express");
 const cors = require("cors");
-const app = express();
-const { Configuration, OpenAIApi } = require("openai");
-const readlineSync = require("readline-sync");
-require("dotenv").config();
 
+const { Configuration, OpenAIApi } = require("openai");
+require("dotenv").config();
+const app = express();
 
 
 app.use(express.json());
 app.use(cors());
 
+const configuration= new Configuration({
+  apiKey:process.env.OPENAI_API_KEY
+})
+const openai= new OpenAIApi(configuration)
 
-const chat = async () => {
-  const configuration = new Configuration({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
-  const openai = new OpenAIApi(configuration);
-
-  const history = [];
-
-  while (true) {
-    const user_input = readlineSync.question("Your input: ");
-
-    const messages = [];
-    for (const [input_text, completion_text] of history) {
-      messages.push({ role: "user", content: input_text });
-      messages.push({ role: "assistant", content: completion_text });
-    }
-
-    messages.push({ role: "user", content: user_input });
-
-    try {
-      const completion = await openai.createChatCompletion({
-        model: "gpt-3.5-turbo",
-        messages: messages,
-      });
-
-      const completion_text = completion.data.choices[0].message.content;
-      console.log(completion_text);
-
-      history.push([user_input, completion_text]);
-
-      const user_input_again = readlineSync.question(
-        "\n Would you like to continue the conversation? (Y/N)"
-      );
-      if (user_input_again.toUpperCase() === "N") {
-        return;
-      } else if (user_input_again.toUpperCase() !== "Y") {
-        console.log("Invalid input. Please enter 'Y' or 'N'.");
-        return;
-      }
-    } catch (error) {
-      if (error.response) {
-        console.log(error.response.status);
-        console.log(error.response.data);
-      } else {
-        console.log(error.message);
-      }
-    }
+app.post("/keyword",async(req,res)=>{
+  const {input}=req.body
+  try {
+    const response =await openai.createCompletion({
+      model:"text-davinci-003",
+      prompt:`Write a joke on ${input}`
+    })
+    return res.status(200).json({
+      success:true,
+      data:response.data.choices[0].text
+    })
+  } catch (error) {
+    return res.status(400).json({
+      error:error.response?error.response.data:"There is no issue with server"
+    })
   }
-}
-chat();
+})
+
+
+const port = process.env.PORT||2020;
+app.listen(port,()=>console.log(`server listening to ${port}`))
